@@ -74,6 +74,23 @@ def countries():
         countries_cache["data"] = data
         countries_cache["time"] = time.time()
         return jsonify(data)
-        
+
+@app.route("/api/weather")
+def weather():
+        try:
+                lat = float(request.args["lat"])
+                lon = float(request.args["lon"])
+        except (KeyError, ValueError):
+                return jsonify(error="Wrong coordinates"), 400
+        try:
+                data = cached_get(
+                        "https://api.open-meteo.com/v1/forecast",
+                        {"latitude": lat, "longitude": lon, "current_weather": "true"},
+                        ttl= 600,
+                )
+                return jsonify(data)
+        except requests.RequestException:
+                return jsonify(error="Weather service is offline."), 502
+
 if __name__=="__main__":
         app.run(port=8000, debug=True)
