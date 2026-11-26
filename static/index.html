@@ -1,1 +1,140 @@
-<h1>Country Explorer</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Country Explorer</title>
+    <style>
+        body {font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem;}
+        h1 {margin-bottom: 0.2rem;}
+        .controls {display: flex; gap:0.5rem; flex-wrap: wrap; margin: 1rem 0;}
+        input, select {padding: 0.5rem; font-size: 1rem;}
+        #search {flex: 1; min-width: 180px;}
+        .card { display: flex; align-items: center; gap: 1rem; border: 1px solid #ddd;
+                border-radius: 8px; padding: 0.6rem; margin: 0.4rem 0; cursor: pointer; }
+        .card:hover {background: #f5f5f5; }
+        .card img { width: 60px; border: 1px solid #ccc; }
+        #weather { display: none; margin: 1rem 0; padding: 1 rem; background: #eef6ff; border-radius: 8px; }
+        #error { color: #b00020; }
+        #count { color: #555; font-size: 0.9rem; }
+        footer { margin-top: 2rem; font-size: 0.85rem; color: #666; }
+    </style>
+</head>
+<body>
+    <h1> Country Explorer</h1>
+    <p>Search countries, filter by regon, sort, and click one to see it's capital's current weather.</p>
+
+    <div class="controls">
+        <input id="search" placeholder="Search Country">
+        <select id="region"><option value="">All regions</option></select>
+        <select id="sort">
+            <option value="name">Sort: Name (A-Z)</option>
+            <option value="pop">Sort: Population (high to low)</option>
+            <option value="arear">Sort: Area (high to low)</option>
+        </select>
+    </div>
+
+    <p id="error"></p>
+    <div id="weather"></div>
+    <p id="count"></p>
+    <div id="list">Loading</div>
+
+    <footer>
+        Data: <a href="https://restcountries.com">REST Countries</a>
+        Weather: <a href="https://open-meteo.com">Open-Meteo</a>
+        Served by: <span id="server">....</span>
+    </footer>
+
+
+    <script>
+        let all = [];
+        const $ = id => document.getElementById(id);
+        //Its function is to stop the API text from being treated as HTML (basic xss protection)
+        function esc(text) {
+            const d = document.createElement("div");
+            d.textContent = text ==null ? "" : text;
+            return d.innerHTML;
+        }
+
+        async function load() {
+            try{
+                const res = await fetch("/api/countries");
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Failed to load countries");
+                all = data;
+                [...new Set(all.map(c => c.region))].filter(Boolean).sort()
+                    .forEach(r => $("region").add(new Option(r,r)));
+                render();
+            }catch (e) {
+                $("error").textContent = e.message;
+                $("list").textContent = "";
+            }
+        }
+
+        function render() {
+            const q = $("search").value.toLowerCase();
+            const reg = $("region").value;
+            const s = $("sort").value;
+
+            const rows = all.filter(c =>
+                c.name.toLowerCase().includes(q) && (!reg || c.region === reg)
+            );
+
+            rows.sort((a, b) =>
+                s === "pop" ? b.population - a.population
+                : s === "area" ? b.area - a.area
+                :a.name.localeCompare(b.name)
+        );
+
+        $("count").textContent = rows.length + " countries shown";
+        $("list").innerHTML = rows.map(c =>`
+            <div class="card" data-name="${encodeURIComponent(c.name)}">
+                <img src="${esc(c.flag)}" alt="Flag of ${esc(c.name)}">
+                <div>
+                    <strong>${esc(c.name)}</strong><br>
+                    ${esc(c.region)} · Capital: ${esc(c.capital || "N/A")}<br>
+                    Population: ${c.population.toLocaleString()} · Area: ${c.area.toLocaleString()} km²
+                </div>
+            </div>`).join("") || "No results.";
+        
+        }
+
+        $("list").addEventListener("click", async e => {
+            const card  = e.target.closest(".card");
+            if (!card) return;
+            const c = all.find(x => x.name === decodeURIComponent(card.dataset.name));
+            const box = $("weather");
+            box.style.display = "block";
+
+            if (c.lat == null || c.lng == null) {
+                box.textContent = "There are no coordinates available for " + c.name + ".";
+                return;
+            }
+            box.textContent = "Loading weather";
+            try {
+                const r = await fetch(`/api/weather?lat=${c.lat}&lon=${c.lng}`);
+                const d = await r.json();
+                if (!r.ok) throw new Error(d.error || "The weather is unavailable");
+                const w = d.current_weather;
+                box.textContent = `${c.capital || c.name}, ${c.name}: ${w.temperature}°C, wind ${w.windspeed} km/h`;
+            } catch(err){
+                box.textContent = err.message
+            }
+        });
+
+        async function showServer() {
+                try {
+                    const r = await fetch("/api/server");
+                    const d = await r.json();
+                    $("server").textContent = d.server;
+                } catch (e) {
+                    $("server").textContent = "unknown";
+                }
+        }
+        
+        ["search", "region", "sort"].forEach(id => $(id).addEventListener("input", render));
+        load();
+        showServer();
+    </script>
+</body>
+</html>
