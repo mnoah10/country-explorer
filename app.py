@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 import time, requests
 import os
+import socket
 load_dotenv ()
 API_KEY = os.getenv("RESTCOUNTRIES_API_KEY")
 COUNTRIES_URL= "https://api.restcountries.com/countries/v5"
@@ -92,5 +93,8 @@ def weather():
         except requests.RequestException:
                 return jsonify(error="Weather service is offline."), 502
 
+@app.route("/api/server")
+def server():
+        return jsonify(server= socket.gethostname())
 if __name__=="__main__":
         app.run(port=8000, debug=True)
