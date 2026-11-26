@@ -46,7 +46,7 @@ def fetch_all_countries():
                 if not data["meta"]["more"]:
                         break
                 offset += 100
-                return results
+        return results
 def simplify(c):
         caps = c.get("capitals") or []
         cap = caps[0] if caps else {}
@@ -96,5 +96,6 @@ def weather():
 @app.route("/api/server")
 def server():
         return jsonify(server= socket.gethostname())
+
 if __name__=="__main__":
         app.run(port=8000, debug=True)
