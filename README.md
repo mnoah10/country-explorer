@@ -10,7 +10,7 @@
 > | Web01 (direct) | http://18.171.185.250 |
 > | Web02 (direct) | http://18.175.44.254 |
 > | GitHub repository | https://github.com/mnoah10/country-explorer |
-> | Demo video | [ADD VIDEO LINK HERE] |
+> | Demo video | [https://youtu.be/NiMr0uCXlQ8] |
 > | **REST Countries API key** | Given in the **submission comment** (kept out of this public repository on purpose, as the assignment requires) |
 > | Open-Meteo API key | None required |
 > | App login | None required (the app has no authentication) |
@@ -53,7 +53,7 @@ The application is deployed on two web servers (Web01 and Web02) behind a load b
 
 **Bonus work**
 
-- In-memory caching of API responses (countries for 24 hours, weather for 10 minutes), which cuts load times and protects the limited free-plan API quota
+- In-memory ing cachof API responses (countries for 24 hours, weather for 10 minutes), which cuts load times and protects the limited free-plan API quota
 - Input validation on the weather endpoint (non-numeric coordinates are rejected with HTTP 400)
 - Cross-site scripting (XSS) protection: text coming from the APIs is escaped before it is inserted into the page
 - API key kept in an environment variable and excluded from Git
